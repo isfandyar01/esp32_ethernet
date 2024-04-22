@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define OP_CODE_OFFSET 5
+
 #define ENC28J60_TX_BUF_START 0x0000
 #define ENC28J60_RX_BUF_START 0x0600
 #define ENC28J60_RX_BUF_END 0x1FFF
@@ -65,9 +67,23 @@
 
 #define MISTAT_BUSY_BIT (1 << 0)
 
+#define reg_type_offset 7
+#define ethernet_reg_type_bit (ENC28J60_RegType ETH_REG << reg_type_offset)
+#define mac_reg_type_bit (ENC28J60_RegType MAC_MII_REG << reg_type_offset)
+// bank 0 regs
+
+#define reg_type_mask 0x80
+
+#define reg_address_mask 0x1F
+
+#define reg_type_offset 7
+#define ethernet_reg_type_bit (ENC28J60_RegType ETH_REG << reg_type_offset)
+#define mac_reg_type_bit (ENC28J60_RegType MAC_MII_REG << reg_type_offset)
+
 #define bank_mask 0x60
 
 #define bank_offset 5
+
 #define bank_0_bits (ENC28J60_RegBank BANK_0 << bank_offset)
 #define bank_1_bits (ENC28J60_RegBank BANK_1 << bank_offset)
 #define bank_2_bits (ENC28J60_RegBank BANK_2 << bank_offset)
@@ -78,7 +94,7 @@
 #define EIR (0x1c | bank_0_bits | ethernet_reg_type_bit)
 #define ESTAT (0x1d | bank_0_bits | ethernet_reg_type_bit)
 #define ECON2 (0x1e | bank_0_bits | ethernet_reg_type_bit)
-#define EON1 (0x1f | bank_0_bits | ethernet_reg_type_bit)
+#define ECON1 (0x1f | bank_0_bits | ethernet_reg_type_bit)
 
 /**
  * @brief since each register has its own specific bank
@@ -89,13 +105,7 @@
  * address e.g etho in bank 1 becomes (register address | bank <<5 | regtype
  * <<7)
  */
-#define reg_type_mask 0x80
 
-#define reg_address_mask 0x1F
-
-#define reg_type_offset 7
-#define ethernet_reg_type_bit (ENC28J60_RegType ETH_REG << reg_type_offset)
-#define mac_reg_type_bit (ENC28J60_RegType MAC_MII_REG << reg_type_offset)
 // bank 0 regs
 #define ERDPTL (0x00 | bank_0_bits | ethernet_reg_type_bit)
 #define ERDPTH (0x01 | bank_0_bits | ethernet_reg_type_bit)
@@ -212,12 +222,15 @@ public:
   void init_enc28j60();
   void Bit_field_set(uint8_t reg, uint8_t data);
   void Bit_field_clear(uint8_t reg, uint8_t data);
+  void write_control_reg(uint8_t reg, uint8_t data);
+  void write_buffer_memory(uint8_t *data, uint16_t size);
+  void Read_buffer_memory(uint8_t *data, uint16_t size);
   void switch_bank(ENC28J60_RegBank bank);
   void enc28j60_reset();
 
-  ENC28J60_RegBank get_register_bank(uint8_t register_address);
-  uint8_t Read_Reg(uint8_t reg);
-  uint8_t get_red_address(uint8_t reg);
+  ENC28J60_RegBank get_register_bank(uint8_t reg);
+  uint8_t Read_control_register(uint8_t reg);
+  uint8_t get_reg_address(uint8_t reg);
 };
 
 #endif // __ENC28J60_HPP__
