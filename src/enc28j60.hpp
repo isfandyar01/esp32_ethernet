@@ -1,9 +1,19 @@
-#ifndef __ENC28J60_HPP__
-#define __ENC28J60_HPP__
+#ifndef ENC28J60_HPP
+#define ENC28J60_HPP
 
+#include "driver/spi_master.h"
 #include <stdint.h>
 
 #define OP_CODE_OFFSET 5
+
+#define reg_address_mask 0x1f
+
+#define reg_type_offset 7
+#define ethernet_reg_type_bit ((ENC28J60_RegType)ETH_REG << reg_type_offset)
+#define mac_reg_type_bit ((ENC28J60_RegType)MAC_MII_REG << reg_type_offset)
+
+#define bank_mask 0x60
+#define bank_offset 5
 
 #define ENC28J60_TX_BUF_START 0x0000
 #define ENC28J60_RX_BUF_START 0x0600
@@ -65,48 +75,19 @@
 #define PHLCON_LFRQ0_BIT (1 << 2)
 #define PHLCON_STRCH_BIT (1 << 1)
 
-#define MISTAT_BUSY_BIT (1 << 0)
+#define bank_0_bits ((ENC28J60_RegBank)BANK_0 << bank_offset)
+#define bank_1_bits ((ENC28J60_RegBank)BANK_1 << bank_offset)
+#define bank_2_bits ((ENC28J60_RegBank)BANK_2 << bank_offset)
+#define bank_3_bits ((ENC28J60_RegBank)BANK_3 << bank_offset)
 
-#define reg_type_offset 7
-#define ethernet_reg_type_bit (ENC28J60_RegType ETH_REG << reg_type_offset)
-#define mac_reg_type_bit (ENC28J60_RegType MAC_MII_REG << reg_type_offset)
-// bank 0 regs
-
-#define reg_type_mask 0x80
-
-#define reg_address_mask 0x1F
-
-#define reg_type_offset 7
-#define ethernet_reg_type_bit (ENC28J60_RegType ETH_REG << reg_type_offset)
-#define mac_reg_type_bit (ENC28J60_RegType MAC_MII_REG << reg_type_offset)
-
-#define bank_mask 0x60
-
-#define bank_offset 5
-
-#define bank_0_bits (ENC28J60_RegBank BANK_0 << bank_offset)
-#define bank_1_bits (ENC28J60_RegBank BANK_1 << bank_offset)
-#define bank_2_bits (ENC28J60_RegBank BANK_2 << bank_offset)
-#define bank_3_bits (ENC28J60_RegBank BANK_0 << bank_offset)
-
-// common regs in all banks
+// Common regs in all banks
 #define EIE (0x1b | bank_0_bits | ethernet_reg_type_bit)
 #define EIR (0x1c | bank_0_bits | ethernet_reg_type_bit)
 #define ESTAT (0x1d | bank_0_bits | ethernet_reg_type_bit)
 #define ECON2 (0x1e | bank_0_bits | ethernet_reg_type_bit)
 #define ECON1 (0x1f | bank_0_bits | ethernet_reg_type_bit)
 
-/**
- * @brief since each register has its own specific bank
- * so we will combine register address with its bank and type in that way when
- * we are reading or writing register we can switch banks accordingly
- * automatically the way we are going to do it is that register address has 5
- * bits after 5 bits we add 2 bits of bank and 1 bit for type so register
- * address e.g etho in bank 1 becomes (register address | bank <<5 | regtype
- * <<7)
- */
-
-// bank 0 regs
+// Bank 0 regs
 #define ERDPTL (0x00 | bank_0_bits | ethernet_reg_type_bit)
 #define ERDPTH (0x01 | bank_0_bits | ethernet_reg_type_bit)
 #define EWRPTL (0x02 | bank_0_bits | ethernet_reg_type_bit)
@@ -132,8 +113,9 @@
 #define EDMACSL (0x16 | bank_0_bits | ethernet_reg_type_bit)
 #define EDMACSH (0x17 | bank_0_bits | ethernet_reg_type_bit)
 
-/// bank 1
+/// Bank 1
 #define EHT0 (0x00 | bank_1_bits | ethernet_reg_type_bit)
+#define EHT1 (0x01 | bank_1_bits | ethernet_reg_type_bit)
 #define EHT2 (0x02 | bank_1_bits | ethernet_reg_type_bit)
 #define EHT3 (0x03 | bank_1_bits | ethernet_reg_type_bit)
 #define EHT4 (0x04 | bank_1_bits | ethernet_reg_type_bit)
@@ -154,7 +136,8 @@
 #define EPMOH (0x15 | bank_1_bits | ethernet_reg_type_bit)
 #define ERXFCON (0x18 | bank_1_bits | ethernet_reg_type_bit)
 #define EPKTCNT (0x19 | bank_1_bits | ethernet_reg_type_bit)
-// bank 2
+
+/// Bank 2
 #define MACON1 (0x00 | bank_2_bits | mac_reg_type_bit)
 #define MACON3 (0x02 | bank_2_bits | mac_reg_type_bit)
 #define MACON4 (0x03 | bank_2_bits | mac_reg_type_bit)
@@ -169,7 +152,7 @@
 #define MIREGADR (0x14 | bank_2_bits | mac_reg_type_bit)
 #define MIWRL (0x16 | bank_2_bits | mac_reg_type_bit)
 
-// bank 3 regs
+/// Bank 3 regs
 #define MAADR5 (0x00 | bank_3_bits | mac_reg_type_bit)
 #define MAADR6 (0x01 | bank_2_bits | mac_reg_type_bit)
 #define MAADR3 (0x02 | bank_2_bits | mac_reg_type_bit)
@@ -194,8 +177,7 @@ typedef enum {
   WRITE_BUFFER_MEM,
   BIT_FIELD_SET,
   BIT_FIELD_CLEAR,
-  SYSTEM_RESET,
-  COMMANDS_NUM,
+  System_Reset = 7
 } ENC28J60_Command;
 
 typedef enum {
@@ -216,9 +198,13 @@ typedef enum {
 } ENC28J60_RegType;
 
 class ENC28J60 {
+
+private:
+  spi_device_handle_t spi;
+
 public:
   static uint8_t current_bank;
-
+  ENC28J60(spi_device_handle_t spi_handle);
   void init_enc28j60();
   void Bit_field_set(uint8_t reg, uint8_t data);
   void Bit_field_clear(uint8_t reg, uint8_t data);
@@ -233,4 +219,4 @@ public:
   uint8_t get_reg_address(uint8_t reg);
 };
 
-#endif // __ENC28J60_HPP__
+#endif // ENC28J60_HPP

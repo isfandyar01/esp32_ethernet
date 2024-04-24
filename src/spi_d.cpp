@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 esp_err_t spi_init(spi_device_handle_t *spi_handle) {
+
   esp_err_t ret;
 
   spi_bus_config_t bus_config = {
@@ -15,7 +16,7 @@ esp_err_t spi_init(spi_device_handle_t *spi_handle) {
       .max_transfer_sz = 0, // Default maximum transfer size
   };
 
-  esp_err_t ret = spi_bus_initialize(VSPI_HOST, &bus_config, SPI_DMA_DISABLED);
+  ret = spi_bus_initialize(VSPI_HOST, &bus_config, SPI_DMA_DISABLED);
   if (ret != ESP_OK) {
     printf("Failed to initialize SPI bus: %d\n", ret);
     return ret;
@@ -48,21 +49,22 @@ esp_err_t spi_init(spi_device_handle_t *spi_handle) {
   return ESP_OK;
 }
 
-uint8_t read_byte(spi_device_handle_t spi, uint8_t reg_addr) {
-  uint8_t data;
+uint8_t read_byte(spi_device_handle_t spi, uint8_t read_comand) {
+  uint16_t data;
   spi_transaction_t t;
-  memset(&t, 0, sizeof(t)); // Zero out the transaction object
-  t.length = 8;             // 8 bits (1 byte)
-  t.rxlength = 8;           // We'll be reading 8 bits
-  t.flags = 0;              // No additional flags
-  t.cmd = reg_addr;         // Command byte indicating the register address
-  t.rx_buffer = &data;      // Buffer to receive the data
+  memset(&t, 0, sizeof(t));   // Zero out the transaction object
+  t.length = 16;              // 8 bits (1 byte)
+  t.rxlength = 16;            // We'll be reading 8 bits
+  t.flags = 0;                // No additional flags
+  t.tx_buffer = &read_comand; // Command byte indicating the register address
+  t.rx_buffer = &data;        // Buffer to receive the data
   esp_err_t ret = spi_device_transmit(spi, &t); // Transmit and receive
   if (ret != ESP_OK) {
     printf("SPI transaction failed: %d\n", ret);
     return 0; // Or handle error as appropriate
   }
-  return data;
+  printf("reg_data_read_byte %X\n", data);
+  return (data >> 8);
 }
 esp_err_t read_multiple_byte();
 
