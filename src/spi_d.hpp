@@ -20,11 +20,11 @@ typedef struct {
 esp_err_t spi_init(spi_device_handle_t *spi_handle, uint8_t count_address_bits,
                    uint8_t count_command_bits);
 
-esp_err_t transfer_byte(spi_device_handle_t spi, uint8_t address,
-                        uint8_t command);
-
-esp_err_t transfer_multiple_byte(spi_device_handle_t spi, uint8_t *data,
-                                 size_t size, uint8_t command, uint8_t address);
-esp_err_t write_2_bytes(spi_device_handle_t spi, uint16_t command);
+esp_err_t transfer_byte(spi_device_handle_t spi_handle, uint8_t tx_data,
+                        uint8_t command, uint8_t reg_address);
+esp_err_t transferMultiplesBytes(spi_device_handle_t spi_handle,
+                                 const uint8_t reg_addr, uint8_t *tx_buf,
+                                 uint8_t *rx_buf, size_t data_length,
+                                 const uint8_t command = 0);
 
 #endif // __SPI_D_HPP__

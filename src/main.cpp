@@ -24,15 +24,6 @@ void app_main() {
   if (ret != ESP_OK) {
     printf("failed to init spi\n");
   }
-
-  ENC28J60 ether_obj(spi);
-  ether_obj.enc28j60_reset();
-  vTaskDelay(100 / portTICK_PERIOD_MS);
-  // ether_obj.write_control_reg(ECON1, 0x02);
-
-  uint8_t reg2 = ether_obj.Read_control_register(ECON2);
-  // uint8_t address = ether_obj.get_reg_address(ECON1);
-  // write_multiple_byte(spi, data, sizeof(data), WRITE_CONTROL_REG, address);
-
-  printf("ECON1_data %X\n", reg2);
+  uint8_t command = READ_CONTROL_REG << OP_CODE_OFFSET;
+  transfer_byte(spi, 0, command, 0x0c);
 }

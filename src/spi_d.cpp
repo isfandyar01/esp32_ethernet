@@ -50,76 +50,17 @@ esp_err_t spi_init(spi_device_handle_t *spi_handle, uint8_t count_address_bits,
   return ESP_OK;
 }
 
-uint8_t read_byte(spi_device_handle_t spi, uint8_t address, uint8_t command) {
-  uint16_t data;
+esp_err_t transfer_byte(spi_device_handle_t spi_handle, uint8_t tx_data,
+                        uint8_t command, uint8_t reg_address) {
+
   spi_transaction_t t;
   memset(&t, 0, sizeof(t)); // Zero out the transaction object
-  t.length = 16;            // 8 bits (1 byte)
-  t.rxlength = 16;          // We'll be reading 8 bits
-  t.flags = 0;
+  t.flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA;
+  t.length = 8;
   t.cmd = command;
-  t.addr = address; // No additional flags
-  // t.tx_buffer = &read_comand; // Command byte indicating the register address
-  t.rx_buffer = &data;                          // Buffer to receive the data
-  esp_err_t ret = spi_device_transmit(spi, &t); // Transmit and receive
-  if (ret != ESP_OK) {
-    printf("SPI transaction failed: %d\n", ret);
-    return 0; // Or handle error as appropriate
-  }
-  uint16_t swap = SPI_SWAP_DATA_RX(data, 16);
-  printf("reg_data_read_byte %X\n", swap); // 2 bytes of data shown as 0xFAFF
-  return (swap);                           // return 1 byte FA
-}
-esp_err_t read_multiple_byte();
-
-esp_err_t write_byte(spi_device_handle_t spi, uint8_t command) {
-
-  spi_transaction_t t;
-  memset(&t, 0, sizeof(t)); // Zero out the transaction object
-  t.length = 16;            // 8 bits (1 byte)
-  t.flags = 0;
-  t.cmd = 0xff;
-  t.addr = 0xff;          // No additional flags
-  t.tx_buffer = &command; // Buffer containing the command byte
-                          // Buffer to receive the data
-  esp_err_t ret = spi_device_transmit(spi, &t); // Transmit and receive
-  if (ret != ESP_OK) {
-    printf("SPI transaction failed: %d\n", ret);
-    return ret; // Or handle error as appropriate
-  }
-  return ESP_OK;
-}
-
-esp_err_t write_2_bytes(spi_device_handle_t spi, uint16_t command) {
-  uint16_t data = SPI_SWAP_DATA_TX(command, 16);
-  printf("bytes to be data %X\n", data);
-  spi_transaction_t t;
-  memset(&t, 0, sizeof(t)); // Zero out the transaction object
-  t.length = 16;            // 8 bits (1 byte)
-  t.flags = 0;              // No additional flags
-  t.tx_buffer = &data;      // Buffer containing the command byte
-                            // Buffer to receive the data
-  esp_err_t ret = spi_device_transmit(spi, &t); // Transmit and receive
-  if (ret != ESP_OK) {
-    printf("SPI transaction failed: %d\n", ret);
-    return ret; // Or handle error as appropriate
-  }
-  return ESP_OK;
-}
-
-esp_err_t write_multiple_byte(spi_device_handle_t spi, uint8_t *data,
-                              size_t size, uint8_t command, uint8_t address) {
-
-  printf("bytes to be send %X\n", size);
-  spi_transaction_t t;
-  memset(&t, 0, sizeof(t)); // Zero out the transaction object
-  t.length = size * 8;      // 8 bits (1 byte)
-  t.flags = 0;
-  t.cmd = command;
-  t.addr = address;   // No additional flags
-  t.tx_buffer = data; // Buffer containing the command byte
-                      // Buffer to receive the data
-  esp_err_t ret = spi_device_transmit(spi, &t); // Transmit and receive
+  t.addr = reg_address;
+  t.tx_data[0] = tx_data;
+  esp_err_t ret = spi_device_transmit(spi_handle, &t); // Transmit and receive
   if (ret != ESP_OK) {
     printf("SPI transaction failed: %d\n", ret);
     return ret; // Or handle error as appropriate
