@@ -17,10 +17,14 @@ typedef struct {
   spi_host_device_t host;
 } SPIDriver;
 
-esp_err_t spi_init(spi_device_handle_t *spi_handle);
-uint8_t read_byte(spi_device_handle_t spi, uint8_t read_command);
-esp_err_t read_multiple_byte();
-esp_err_t write_byte(spi_device_handle_t spi, uint8_t command);
-esp_err_t write_multiple_byte();
+esp_err_t spi_init(spi_device_handle_t *spi_handle, uint8_t count_address_bits,
+                   uint8_t count_command_bits);
+
+esp_err_t transfer_byte(spi_device_handle_t spi, uint8_t address,
+                        uint8_t command);
+
+esp_err_t transfer_multiple_byte(spi_device_handle_t spi, uint8_t *data,
+                                 size_t size, uint8_t command, uint8_t address);
+esp_err_t write_2_bytes(spi_device_handle_t spi, uint16_t command);
 
 #endif // __SPI_D_HPP__
