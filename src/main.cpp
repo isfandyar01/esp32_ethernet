@@ -25,7 +25,8 @@ void app_main() {
     printf("failed to init spi\n");
   }
 
-  transfer_and_read_byte(spi, nullptr, 0, READ_CONTROL_REG, 0x0c);
-  transfer_and_read_MultiplesBytes(spi, 0x0c, data, nullptr, sizeof(data),
-                                   WRITE_CONTROL_REG);
+  ENC28J60 ether_obj(spi);
+  ether_obj.enc28j60_reset();
+  uint8_t data = ether_obj.Read_control_register(ERXFCON);
+  printf("red data %X\n", data);
 }
