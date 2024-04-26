@@ -24,6 +24,8 @@ void app_main() {
   if (ret != ESP_OK) {
     printf("failed to init spi\n");
   }
-  uint8_t command = READ_CONTROL_REG << OP_CODE_OFFSET;
-  transfer_byte(spi, 0, command, 0x0c);
+
+  transfer_and_read_byte(spi, nullptr, 0, READ_CONTROL_REG, 0x0c);
+  transfer_and_read_MultiplesBytes(spi, 0x0c, data, nullptr, sizeof(data),
+                                   WRITE_CONTROL_REG);
 }
