@@ -177,3 +177,26 @@ void ENC28J60::write_buffer_memory(uint8_t *data, uint16_t size)
 {
     transfer_and_read_MultiplesBytes(spi, 0x26, data, nullptr, sizeof(data), WRITE_BUFFER_MEM);
 }
+
+
+void ENC28J60::enc_packet_send(uint8_t *data, uint16_t length)
+{
+    Bit_field_set(ECON1, ECON1_TXRST_BIT);
+    Bit_field_clear(ECON1, ECON1_TXRST_BIT);
+    Bit_field_clear(EIR, EIR_TXERIF_BIT | EIR_TXERIF_BIT);
+
+    write_control_reg_pair(EWRPTL, ENC28J60_TX_BUF_START);
+    write_control_reg_pair(ETXNDL, ENC28J60_TX_BUF_START + length);
+    write_buffer_memory(data, length);
+
+    Bit_field_set(ECON1, ECON1_TXRTS_BIT);
+
+
+    while ((Read_control_register(EIR) & (EIR_TXIF_BIT | EIR_TXERIF_BIT)) == 0)
+        ;
+    if (!(Read_control_register(EIR) & EIR_TXERIF_BIT))
+    {
+        /* code */
+    }
+    Bit_field_clear(ECON1, ECON1_TXRTS_BIT);
+}

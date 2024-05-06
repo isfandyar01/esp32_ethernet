@@ -22,6 +22,19 @@ extern "C"
 spi_device_handle_t spi;
 #define MAC_ADDR_SIZE 6
 
+uint8_t arp_request[42] = {
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, // Destination MAC address (broadcast)
+    0x00, 0x17, 0x22, 0xED, 0xA5, 0x01, // Source MAC address (assuming this is your MAC address)
+    0x08, 0x06,                         // EtherType (ARP: 0x0806)
+    0x00, 0x01,                         // Hardware type (Ethernet: 0x0001)
+    0x08, 0x00,                         // Protocol type (IPv4: 0x0800)
+    0x06, 0x04, // Hardware size (Ethernet MAC address size: 6 bytes), Protocol size (IPv4 address size: 4 bytes)
+    0x00, 0x01, // ARP opcode (Request: 0x0001)
+    0x00, 0x17, 0x22, 0xED, 0xA5, 0x01, // Sender MAC address
+    0xc0, 0xa8, 0x12, 0x98,             // Sender IP address (192.168.18.152)
+    0x00, 0x00, 0x00, 0x00,             // Target MAC address (unknown, typically left as zeros in ARP requests)
+    0xc0, 0xa8, 0x12, 0x01              // Target IP address (192.168.18.1, your router's IP)
+};
 
 void app_main()
 {
@@ -44,6 +57,9 @@ void app_main()
 
     ether_obj.init_enc28j60();
 
-    uint8_t data = ether_obj.Read_control_register(ECON1);
-    printf("red data %X\n", data);
+    while (true)
+    {
+        ether_obj.enc_packet_send(arp_request, 42);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
 }
