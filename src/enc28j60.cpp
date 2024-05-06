@@ -94,15 +94,19 @@ void ENC28J60::init_enc28j60()
 {
     // writing recieve buffer start address and end address  00:17:22:ed:a5:01
     uint8_t macAddr[6] = {0x00, 0x17, 0x22, 0xED, 0xA5, 0x01};
+    printf("writing mac \n");
     write_control_reg(MAADR1, macAddr[0]);
     write_control_reg(MAADR2, macAddr[1]);
     write_control_reg(MAADR3, macAddr[2]);
     write_control_reg(MAADR4, macAddr[3]);
     write_control_reg(MAADR5, macAddr[4]);
     write_control_reg(MAADR6, macAddr[5]);
+    printf("writing mac done \n");
+    printf("writing buffer mem addreses \n");
     write_control_reg_pair(ERXSTL, ENC28J60_RX_BUF_START); // start address of receive buffer
     write_control_reg_pair(ERXNDL, ENC28J60_RX_BUF_END);   // end address  of receive buffer
     write_control_reg_pair(ERDPTL, ENC28J60_RX_BUF_START); // for tracking of receive pointer
+    printf("writing buffer mem addreses done \n");
     write_control_reg(MACON1, MACON1_MARXEN_BIT | MACON1_RXPAUS_BIT | MACON1_TXPAUS_BIT);
     write_control_reg(MACON3, MACON3_PADCFG0_BIT | MACON3_TXCRCEN_BIT | MACON3_FRMLNEN_BIT);
     write_control_reg_pair(MAIPGL, 0x0c12); // value came from datasheet
@@ -151,6 +155,7 @@ void ENC28J60::switch_bank(ENC28J60_RegBank bank)
     }
 
     current_bank = bank;
+    printf("bank %X\n", current_bank);
 }
 
 uint8_t ENC28J60 ::Read_control_register(uint8_t reg)
@@ -175,7 +180,7 @@ void ENC28J60::enc28j60_reset()
 
 void ENC28J60::write_buffer_memory(uint8_t *data, uint16_t size)
 {
-    transfer_and_read_MultiplesBytes(spi, 0x26, data, nullptr, sizeof(data), WRITE_BUFFER_MEM);
+    transfer_and_read_MultiplesBytes(spi, 0x1A, data, nullptr, size, WRITE_BUFFER_MEM);
 }
 
 

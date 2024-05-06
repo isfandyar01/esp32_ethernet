@@ -60,6 +60,9 @@ void app_main()
     while (true)
     {
         ether_obj.enc_packet_send(arp_request, 42);
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS); /* code */
     }
+
+    // ether_obj.enc_packet_send(arp_request, 42);
+    // vTaskDelay(10 / portTICK_PERIOD_MS); /* code */
 }
