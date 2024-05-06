@@ -15,9 +15,19 @@
 #define bank_mask 0x60
 #define bank_offset 5
 
-#define ENC28J60_TX_BUF_START 0x0000
-#define ENC28J60_RX_BUF_START 0x0600
-#define ENC28J60_RX_BUF_END 0x1FFF
+#define ENC28J60_TX_BUF_START 0x0c00
+#define ENC28J60_TX_BUF_END 0x11ff
+#define ENC28J60_RX_BUF_START 0x0000
+#define ENC28J60_RX_BUF_END 0x0bff
+
+#define EIE_RXERIE (1 << 0)
+#define EIE_TXERIE (1 << 1)
+#define EIE_TXIE (1 << 3)
+#define EIE_LINKIE (1 << 4)
+#define EIE_DMAIE (1 << 5)
+#define EIE_PKTIE (1 << 6)
+#define EIE_INTIE (1 << 7)
+
 
 #define EIR_PKTIF_BIT (1 << 6)
 #define EIR_DMAIF_BIT (1 << 5)
@@ -151,7 +161,9 @@
 #define MICMD (0x12 | bank_2_bits | mac_reg_type_bit)
 #define MIREGADR (0x14 | bank_2_bits | mac_reg_type_bit)
 #define MIWRL (0x16 | bank_2_bits | mac_reg_type_bit)
-
+#define MIWRH (0x17 | bank_2_bits | mac_reg_type_bit)
+#define MIRDL (0x18 | bank_2_bits | mac_reg_type_bit)
+#define MIRDH (0x19 | bank_2_bits | mac_reg_type_bit)
 /// Bank 3 regs
 #define MAADR5 (0x00 | bank_3_bits | mac_reg_type_bit)
 #define MAADR6 (0x01 | bank_2_bits | mac_reg_type_bit)
@@ -170,53 +182,73 @@
 #define EPAUSL (0x18 | bank_2_bits | ethernet_reg_type_bit)
 #define EPAUSH (0x19 | bank_2_bits | ethernet_reg_type_bit)
 
-typedef enum {
-  READ_CONTROL_REG,
-  READ_BUFFER_MEM,
-  WRITE_CONTROL_REG,
-  WRITE_BUFFER_MEM,
-  BIT_FIELD_SET,
-  BIT_FIELD_CLEAR,
-  System_Reset = 7
+// PHY registers
+#define PHCON1 (0x00)
+#define PHSTAT1 (0x01)
+#define PHID1 (0x02)
+#define PHID2 (0x03)
+#define PHCON2 (0x10)
+#define PHSTAT2 (0x11)
+#define PHIE (0x12)
+#define PHIR (0x13)
+#define PHLCON (0x14)
+
+typedef enum
+{
+    READ_CONTROL_REG,
+    READ_BUFFER_MEM,
+    WRITE_CONTROL_REG,
+    WRITE_BUFFER_MEM,
+    BIT_FIELD_SET,
+    BIT_FIELD_CLEAR,
+    System_Reset = 7
 } ENC28J60_Command;
 
-typedef enum {
-  BANK_0,
-  BANK_1,
-  BANK_2,
-  BANK_3,
+typedef enum
+{
+    BANK_0,
+    BANK_1,
+    BANK_2,
+    BANK_3,
 } ENC28J60_RegBank;
 
-typedef enum {
-  CS_LOW = 0,
-  CS_HIGH = 1,
+typedef enum
+{
+    CS_LOW = 0,
+    CS_HIGH = 1,
 } ENC28J60_CS_State;
 
-typedef enum {
-  ETH_REG,
-  MAC_MII_REG,
+typedef enum
+{
+    ETH_REG,
+    MAC_MII_REG,
 } ENC28J60_RegType;
 
-class ENC28J60 {
+class ENC28J60
+{
 
-private:
-  spi_device_handle_t spi;
+  private:
+    spi_device_handle_t spi;
 
-public:
-  static uint8_t current_bank;
-  ENC28J60(spi_device_handle_t spi_handle);
-  void init_enc28j60();
-  void Bit_field_set(uint8_t reg, uint8_t data);
-  void Bit_field_clear(uint8_t reg, uint8_t data);
-  void write_control_reg(uint8_t reg, uint8_t data);
-  void write_buffer_memory(uint8_t *data, uint16_t size);
-  void Read_buffer_memory(uint8_t *data, uint16_t size);
-  void switch_bank(ENC28J60_RegBank bank);
-  void enc28j60_reset();
+  public:
+    static uint8_t current_bank;
+    ENC28J60(spi_device_handle_t spi_handle);
+    void init_enc28j60();
+    void Bit_field_set(uint8_t reg, uint8_t data);
+    void Bit_field_clear(uint8_t reg, uint8_t data);
+    void write_control_reg(uint8_t reg, uint8_t data);
+    void write_phy_reg(uint8_t reg_address, uint16_t data);
+    void write_buffer_memory(uint8_t *data, uint16_t size);
+    void enc_packet_send(uint8_t *data, uint16_t length);
+    void Read_buffer_memory(uint8_t *data, uint16_t size);
+    void switch_bank(ENC28J60_RegBank bank);
+    void enc28j60_reset();
+    void write_control_reg_pair(uint8_t reg_address, uint16_t data);
 
-  ENC28J60_RegBank get_register_bank(uint8_t reg);
-  uint8_t Read_control_register(uint8_t reg);
-  uint8_t get_reg_address(uint8_t reg);
+    ENC28J60_RegBank get_register_bank(uint8_t reg);
+    uint8_t Read_control_register(uint8_t reg);
+    uint8_t get_reg_address(uint8_t reg);
+    uint16_t Read_phy_reg(uint8_t reg);
 };
 
 #endif // ENC28J60_HPP
