@@ -28,6 +28,14 @@
 #define EIE_PKTIE (1 << 6)
 #define EIE_INTIE (1 << 7)
 
+#define ERXFCON_UCEN 0x80
+#define ERXFCON_ANDOR 0x40
+#define ERXFCON_CRCEN 0x20
+#define ERXFCON_PMEN 0x10
+#define ERXFCON_MPEN 0x08
+#define ERXFCON_HTEN 0x04
+#define ERXFCON_MCEN 0x02
+#define ERXFCON_BCEN 0x01
 
 #define EIR_PKTIF_BIT (1 << 6)
 #define EIR_DMAIF_BIT (1 << 5)
@@ -249,6 +257,7 @@ class ENC28J60
     uint8_t Read_control_register(uint8_t reg);
     uint8_t get_reg_address(uint8_t reg);
     uint16_t Read_phy_reg(uint8_t reg);
+    uint8_t read_mac_register(uint8_t reg);
 };
 
 #endif // ENC28J60_HPP
