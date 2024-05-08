@@ -130,7 +130,6 @@ void ENC28J60::init_enc28j60()
 
     // write_control_reg(ECON1, ECON1_RXEN_BIT);
     Bit_field_set(ECON1, ECON1_RXEN_BIT);
-    // Bit_field_set(EIE, );
 }
 
 uint8_t ENC28J60::get_reg_address(uint8_t reg)
