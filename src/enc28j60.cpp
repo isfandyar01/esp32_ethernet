@@ -106,8 +106,6 @@ void ENC28J60::init_enc28j60()
     write_control_reg_pair(ERXWRPTL, ENC28J60_RX_BUF_START);
     printf("writing buffer mem addreses done \n");
 
-    write_control_reg(ERXFCON, ERXFCON_UCEN | ERXFCON_ANDOR | ERXFCON_CRCEN);
-
 
     write_control_reg(MACON1, MACON1_MARXEN_BIT | MACON1_RXPAUS_BIT | MACON1_TXPAUS_BIT | MACON1_PASSALL_BIT);
     write_control_reg(MACON3, MACON3_PADCFG0_BIT | MACON3_TXCRCEN_BIT | MACON3_FRMLNEN_BIT);
@@ -128,7 +126,15 @@ void ENC28J60::init_enc28j60()
     write_phy_reg(PHLCON, 0x0122);
     write_phy_reg(PHCON2, PHCON2_HDLDIS_BIT);
 
+
+    write_control_reg(ERXFCON, ERXFCON_UCEN | ERXFCON_PMEN | ERXFCON_CRCEN);
+
+    write_control_reg(EPMM0, 0x3f);
+    write_control_reg(EPMM1, 0x30);
+    write_control_reg(EPMCSL, 0xf9);
+    write_control_reg(EPMCSH, 0xf7);
     // write_control_reg(ECON1, ECON1_RXEN_BIT);
+    Bit_field_set(EIE, EIE_INTIE | EIE_PKTIE);
     Bit_field_set(ECON1, ECON1_RXEN_BIT);
 }
 
@@ -209,7 +215,34 @@ void ENC28J60::write_buffer_memory(uint8_t *data, uint16_t size)
 
 void ENC28J60::Read_buffer_memory(uint8_t *data, uint16_t size)
 {
-    transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, data, size, READ_BUFFER_MEM);
+    uint8_t bytes[2] = {0};
+    uint16_t nxt_pakt_pointer;
+    uint16_t packet_length;
+
+    uint8_t packet_count = Read_control_register(EPKTCNT);
+    if (packet_count == 0)
+    {
+        printf("no packet received\n");
+        return;
+    }
+    printf(" packet count %X\n", packet_count);
+    write_control_reg_pair(ERDPTL, ENC28J60_RX_BUF_START);
+
+    // read the next packet pointer
+
+    transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
+
+    nxt_pakt_pointer = bytes[0] | bytes[1] << 8;
+
+    printf(" next packet pointer %04X\n", nxt_pakt_pointer);
+
+
+    transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
+
+
+    packet_length = bytes[0] | bytes[1] << 8;
+
+    printf("  packet lenght%04X\n", packet_length);
 }
 
 void ENC28J60::enc_packet_send(uint8_t *data, uint16_t length)
