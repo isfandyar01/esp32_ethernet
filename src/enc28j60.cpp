@@ -18,6 +18,7 @@
 //  *
 //  */
 uint8_t ENC28J60::current_bank = BANK_0;
+uint16_t ENC28J60 ::nxt_pakt_pointer = ENC28J60_RX_BUF_START;
 
 ENC28J60::ENC28J60(spi_device_handle_t spi_handle)
 {
@@ -216,8 +217,9 @@ void ENC28J60::write_buffer_memory(uint8_t *data, uint16_t size)
 void ENC28J60::Read_buffer_memory(uint8_t *data, uint16_t size)
 {
     uint8_t bytes[2] = {0};
-    uint16_t nxt_pakt_pointer;
+
     uint16_t packet_length;
+    uint16_t rx_status;
 
     uint8_t packet_count = Read_control_register(EPKTCNT);
     if (packet_count == 0)
@@ -225,8 +227,8 @@ void ENC28J60::Read_buffer_memory(uint8_t *data, uint16_t size)
         printf("no packet received\n");
         return;
     }
-    printf(" packet count %X\n", packet_count);
-    write_control_reg_pair(ERDPTL, ENC28J60_RX_BUF_START);
+    // printf(" packet count %X\n", packet_count);
+    write_control_reg_pair(ERDPTL, nxt_pakt_pointer);
 
     // read the next packet pointer
 
@@ -242,7 +244,34 @@ void ENC28J60::Read_buffer_memory(uint8_t *data, uint16_t size)
 
     packet_length = bytes[0] | bytes[1] << 8;
 
+    packet_length -= 4; // remove crc
+
+    if (packet_length > (1500 - 1))
+    {
+        packet_length = 1500 - 1;
+    }
+
+
     printf("  packet lenght%04X\n", packet_length);
+
+    transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
+    rx_status = bytes[0] | bytes[1] << 8;
+
+    printf(" recive status %04X\n", rx_status);
+
+
+    if ((rx_status & 0x80) == 0)
+    {
+        // invalid
+        packet_length = 0;
+    }
+    else
+    {
+        transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, data, packet_length, READ_BUFFER_MEM);
+    }
+
+    write_control_reg_pair(ERDPTL, nxt_pakt_pointer);
+    Bit_field_set(ECON2, ECON2_PKTDEC_BIT);
 }
 
 void ENC28J60::enc_packet_send(uint8_t *data, uint16_t length)

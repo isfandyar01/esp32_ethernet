@@ -240,6 +240,7 @@ class ENC28J60
 
   public:
     static uint8_t current_bank;
+    static uint16_t nxt_pakt_pointer;
     ENC28J60(spi_device_handle_t spi_handle);
     void init_enc28j60();
     void Bit_field_set(uint8_t reg, uint8_t data);
