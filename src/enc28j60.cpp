@@ -209,12 +209,10 @@ void ENC28J60::write_buffer_memory(uint8_t *data, uint16_t size)
     transfer_and_read_MultiplesBytes(spi, 0x1A, data, nullptr, size, WRITE_BUFFER_MEM);
 }
 
-uint16_t ENC28J60::Read_buffer_memory(uint8_t *data)
+uint16_t ENC28J60::Read_buffer_memory()
 {
     uint8_t bytes[2] = {0};
 
-    uint16_t packet_length;
-    uint16_t rx_status;
 
     uint8_t packet_count = Read_control_register(EPKTCNT);
     if (packet_count == 0)
@@ -236,7 +234,6 @@ uint16_t ENC28J60::Read_buffer_memory(uint8_t *data)
 
     transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
 
-
     packet_length = bytes[0] | bytes[1] << 8;
 
     packet_length -= 4; // remove crc
@@ -250,12 +247,12 @@ uint16_t ENC28J60::Read_buffer_memory(uint8_t *data)
     // printf("  packet lenght%04X\n", packet_length);
 
     transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
-    rx_status = bytes[0] | bytes[1] << 8;
+    packet_status = bytes[0] | bytes[1] << 8;
 
     // printf(" recive status %04X\n", rx_status);
 
 
-    if ((rx_status & 0x80) == 0)
+    if ((packet_status & 0x80) == 0)
     {
         // invalid
         printf("invalid packet received");
@@ -263,16 +260,28 @@ uint16_t ENC28J60::Read_buffer_memory(uint8_t *data)
     }
     else
     {
-        transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, data, packet_length, READ_BUFFER_MEM);
+        transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, (uint8_t *)&(ENC_data[0]), packet_length, READ_BUFFER_MEM);
+        transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, (uint8_t *)&checkSum, ENC28J60_CRC_SIZE, READ_BUFFER_MEM);
     }
-    printf("packet length %02X\n", packet_length);
+    printf("packet length in bf %02X\n", packet_length);
 
-    for (int i = 0; i < (packet_length); i++)
+    // for (int i = 0; i < (packet_length); i++)
+    // {
+    //     printf("read data in buffer  %02X\n", data[i]); // Print the hexadecimal representation of each element
+    // }
+
+    /*
+    And here comes the mentioned nuance - the bug ENC28J60. With an even value in ERXRDPT, data corruption can occur, so
+    write a value reduced by 1 to this register (it will be odd, since an even value is guaranteed in frame->nextPtr,
+    since the packet start address is always even in the controller)
+    */
+    uint16_t nextPtr = nxt_pakt_pointer - 1;
+    if (nextPtr > ENC28J60_RX_BUF_END)
     {
-        printf("read data in buffer  %02X\n", data[i]); // Print the hexadecimal representation of each element
+        nextPtr = ENC28J60_RX_BUF_END;
     }
 
-    write_control_reg_pair(ERDPTL, nxt_pakt_pointer);
+    write_control_reg_pair(ERDPTL, nextPtr);
     Bit_field_set(ECON2, ECON2_PKTDEC_BIT);
     return packet_length;
 }

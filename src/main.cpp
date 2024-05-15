@@ -105,19 +105,19 @@ void app_main()
     // uint8_t mac = ether_obj.read_mac_register(MAADR5);
     // printf("mac address %x\n", mac);
     uint8_t *arp_data = (uint8_t *)&request_packet;
-    uint8_t read_data[1500];
+
     while (true)
     {
         ether_obj.enc_packet_send(arp_data, sizeof(arp_packet_struct));
 
-        uint16_t packet_lenght = ether_obj.Read_buffer_memory(read_data);
+        uint16_t packet_lenght = ether_obj.Read_buffer_memory();
 
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         printf("packet length %02X\n", packet_lenght);
         for (int i = 0; i < packet_lenght; i++)
         {
-            printf("read_data %02X\n", read_data[i]); // Print the hexadecimal representation of each element
+            printf("read_data %02X\n", ether_obj.ENC_data[i]); // Print the hexadecimal representation of each element
         }
     }
 

@@ -15,6 +15,10 @@
 #define bank_mask 0x60
 #define bank_offset 5
 
+#define ENC28J60_FRAME_DATA_MAX 1500
+#define ENC_HEAD_SIZE 6
+#define ENC28J60_CRC_SIZE 4
+
 #define ENC28J60_TX_BUF_START 0x0000
 #define ENC28J60_TX_BUF_END 0x05ff
 #define ENC28J60_RX_BUF_START 0x0600
@@ -241,6 +245,12 @@ class ENC28J60
   public:
     static uint8_t current_bank;
     static uint16_t nxt_pakt_pointer;
+    uint16_t packet_length;
+    uint16_t packet_status;
+
+    uint32_t checkSum;
+    uint8_t ENC_data[ENC28J60_FRAME_DATA_MAX];
+
     ENC28J60(spi_device_handle_t spi_handle);
     void init_enc28j60();
     void Bit_field_set(uint8_t reg, uint8_t data);
@@ -249,7 +259,7 @@ class ENC28J60
     void write_phy_reg(uint8_t reg_address, uint16_t data);
     void write_buffer_memory(uint8_t *data, uint16_t size);
     void enc_packet_send(uint8_t *data, uint16_t length);
-    uint16_t Read_buffer_memory(uint8_t *data);
+    uint16_t Read_buffer_memory();
     void switch_bank(ENC28J60_RegBank bank);
     void enc28j60_reset();
     void write_control_reg_pair(uint8_t reg_address, uint16_t data);
