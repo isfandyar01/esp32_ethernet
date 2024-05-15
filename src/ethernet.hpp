@@ -15,7 +15,7 @@
 #pragma pack(push, 1)
 struct arp_packet_struct
 {
-    uint8_t dst_mac[7];
+    uint8_t dst_mac[6];
     uint8_t src_mac[6];
     uint8_t ether_type[2];
     uint8_t hwtype[2];

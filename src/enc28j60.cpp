@@ -287,7 +287,12 @@ void ENC28J60::enc_packet_send(uint8_t *data, uint16_t length)
 
         write_control_reg_pair(EWRPTL, ENC28J60_TX_BUF_START);
         write_control_reg_pair(ETXNDL, ENC28J60_TX_BUF_START + length);
-        // transfer_and_read_byte(spi, nullptr, 0x00, WRITE_BUFFER_MEM, 0x1a);
+        /* before sending packet i have to write control byte per packet
+        it will be 0x00 so that setting for packet is taken from macon3
+        which we initializing in init function
+        */
+        uint8_t control_byte = 0x00;
+        write_buffer_memory(&control_byte, 1);
         write_buffer_memory(data, length);
 
         Bit_field_set(ECON1, ECON1_TXRTS_BIT);

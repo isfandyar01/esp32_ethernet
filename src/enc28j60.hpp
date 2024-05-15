@@ -15,10 +15,10 @@
 #define bank_mask 0x60
 #define bank_offset 5
 
-#define ENC28J60_TX_BUF_START 0x0c00
-#define ENC28J60_TX_BUF_END 0x11ff
-#define ENC28J60_RX_BUF_START 0x0000
-#define ENC28J60_RX_BUF_END 0x0bff
+#define ENC28J60_TX_BUF_START 0x0000
+#define ENC28J60_TX_BUF_END 0x05ff
+#define ENC28J60_RX_BUF_START 0x0600
+#define ENC28J60_RX_BUF_END 0x1fff
 
 #define EIE_RXERIE (1 << 0)
 #define EIE_TXERIE (1 << 1)

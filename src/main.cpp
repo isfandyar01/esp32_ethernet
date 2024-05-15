@@ -56,33 +56,33 @@ uint8_t arp_request_2[] = {
 void app_main()
 {
     arp_packet_struct request_packet = {
-        {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, // Destination MAC address (broadcast)
-        {0x74, 0x69, 0x69, 0x2D, 0x30, 0x36},       // Source MAC address (assuming this is your MAC address)
-        {0x08, 0x06},                               // EtherType (ARP: 0x0806)
-        {0x00, 0x01},                               // Hardware type (Ethernet: 0x0001)
-        {0x08, 0x00},                               // Protocol type (IPv4: 0x0800)
-        6,                                          // Hardware size (Ethernet MAC address size: 6 bytes)
-        4,                                          // Protocol size (IPv4 address size: 4 bytes)
-        {0x00, 0x01},                               // ARP opcode (Request: 0x0001)
-        {0x74, 0x69, 0x69, 0x2D, 0x30, 0x36},       // Sender MAC address
-        {192, 168, 18, 52},                         // Sender IP address (192.168.18.52)
-        {0x00, 0x00, 0x00, 0x00},                   // Target MAC address (unknown, set to zeros)
+        {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, // Destination MAC address (broadcast)
+        {0x74, 0x69, 0x69, 0x2D, 0x30, 0x36}, // Source MAC address (assuming this is your MAC address)
+        {0x08, 0x06},                         // EtherType (ARP: 0x0806)
+        {0x00, 0x01},                         // Hardware type (Ethernet: 0x0001)
+        {0x08, 0x00},                         // Protocol type (IPv4: 0x0800)
+        6,                                    // Hardware size (Ethernet MAC address size: 6 bytes)
+        4,                                    // Protocol size (IPv4 address size: 4 bytes)
+        {0x00, 0x01},                         // ARP opcode (Request: 0x0001)
+        {0x74, 0x69, 0x69, 0x2D, 0x30, 0x36}, // Sender MAC address
+        {192, 168, 18, 52},                   // Sender IP address (192.168.18.52)
+        {0x00, 0x00, 0x00, 0x00},             // Target MAC address (unknown, set to zeros)
         {192, 168, 18, 1}};
 
 
     arp_packet_struct reply_packet = {
-        {0xff, 0x74, 0x69, 0x69, 0x2D, 0x30, 0x36}, // Destination MAC address (Sender MAC address from the request)
-        {0xff, 0xff, 0xff, 0xff, 0xff, 0xff},       // Source MAC address (broadcast)
-        {0x08, 0x06},                               // EtherType (ARP: 0x0806)
-        {0x00, 0x01},                               // Hardware type (Ethernet: 0x0001)
-        {0x08, 0x00},                               // Protocol type (IPv4: 0x0800)
-        6,                                          // Hardware size (Ethernet MAC address size: 6 bytes)
-        4,                                          // Protocol size (IPv4 address size: 4 bytes)
-        {0x00, 0x02},                               // ARP opcode (Reply: 0x0002)
-        {0x74, 0x69, 0x69, 0x2D, 0x30, 0x36},       // Sender MAC address (Your MAC address)
-        {192, 168, 18, 52},                         // Sender IP address (Your IP address)
-        {0x00, 0x00, 0x00, 0x00},                   // Target MAC address (unknown, set to zeros)
-        {192, 168, 18, 52}                          // Target IP address (Same as Sender IP address)
+        {0x74, 0x69, 0x69, 0x2D, 0x30, 0x36}, // Destination MAC address (Sender MAC address from the request)
+        {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, // Source MAC address (broadcast)
+        {0x08, 0x06},                         // EtherType (ARP: 0x0806)
+        {0x00, 0x01},                         // Hardware type (Ethernet: 0x0001)
+        {0x08, 0x00},                         // Protocol type (IPv4: 0x0800)
+        6,                                    // Hardware size (Ethernet MAC address size: 6 bytes)
+        4,                                    // Protocol size (IPv4 address size: 4 bytes)
+        {0x00, 0x02},                         // ARP opcode (Reply: 0x0002)
+        {0x74, 0x69, 0x69, 0x2D, 0x30, 0x36}, // Sender MAC address (Your MAC address)
+        {192, 168, 18, 52},                   // Sender IP address (Your IP address)
+        {0x00, 0x00, 0x00, 0x00},             // Target MAC address (unknown, set to zeros)
+        {192, 168, 18, 52}                    // Target IP address (Same as Sender IP address)
     };
 
     printf("Hello PlatformIO!\n");
