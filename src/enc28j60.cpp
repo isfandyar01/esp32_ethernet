@@ -1,22 +1,7 @@
 #include "enc28j60.hpp"
 #include "spi_d.hpp"
 
-// /**
-//   void init_enc28j60();
-//   void Bit_field_set(uint8_t reg, uint8_t data);
-//   void Bit_field_clear(uint8_t reg, uint8_t data);
-//   void write_control_reg(uint8_t reg, uint8_t data);
-//   void write_buffer_memory(uint8_t *data, uint16_t size);
-//   void Read_buffer_memory(uint8_t *data, uint16_t size);
-//   void switch_bank(ENC28J60_RegBank bank);
-//   void enc28j60_reset();
 
-//   ENC28J60_RegBank get_register_bank(uint8_t reg);
-//   uint8_t Read_control_register(uint8_t reg);
-//   uint8_t get_reg_address(uint8_t reg);
-//  *
-//  *
-//  */
 uint8_t ENC28J60::current_bank = BANK_0;
 uint16_t ENC28J60 ::nxt_pakt_pointer = ENC28J60_RX_BUF_START;
 
@@ -94,7 +79,7 @@ void ENC28J60::Bit_field_clear(uint8_t reg, uint8_t data)
 void ENC28J60::init_enc28j60()
 {
     // writing recieve buffer start address and end address  00:17:22:ed:a5:01
-    uint8_t macAddr[6] = {0x36, 0x30, 0x2d, 0x69, 0x69, 0x74};
+    uint8_t macAddr[6] = {0x74, 0x69, 0x69, 0x2D, 0x30, 0x36};
 
     printf("writing buffer mem addreses \n");
     write_control_reg_pair(ERXSTL, ENC28J60_RX_BUF_START); // start address of receive buffer
@@ -130,6 +115,16 @@ void ENC28J60::init_enc28j60()
 
     write_control_reg(ERXFCON, ERXFCON_UCEN | ERXFCON_PMEN | ERXFCON_CRCEN);
 
+
+    // For broadcast packets we allow only ARP packtets
+    // All other packets should be unicast only for our mac (MAADR)
+    //
+    // The pattern to match on is therefore
+    // Type     ETH.DST
+    // ARP      BROADCAST
+    // 06 08 -- ff ff ff ff ff ff -> ip checksum for theses bytes=f7f9
+    // in binary these poitions are:11 0000 0011 1111
+    // This is hex 303F->EPMM0=0x3f,EPMM1=0x30
     write_control_reg(EPMM0, 0x3f);
     write_control_reg(EPMM1, 0x30);
     write_control_reg(EPMCSL, 0xf9);
@@ -214,7 +209,7 @@ void ENC28J60::write_buffer_memory(uint8_t *data, uint16_t size)
     transfer_and_read_MultiplesBytes(spi, 0x1A, data, nullptr, size, WRITE_BUFFER_MEM);
 }
 
-void ENC28J60::Read_buffer_memory(uint8_t *data, uint16_t size)
+uint16_t ENC28J60::Read_buffer_memory(uint8_t *data)
 {
     uint8_t bytes[2] = {0};
 
@@ -225,7 +220,7 @@ void ENC28J60::Read_buffer_memory(uint8_t *data, uint16_t size)
     if (packet_count == 0)
     {
         printf("no packet received\n");
-        return;
+        return 0;
     }
     // printf(" packet count %X\n", packet_count);
     write_control_reg_pair(ERDPTL, nxt_pakt_pointer);
@@ -236,7 +231,7 @@ void ENC28J60::Read_buffer_memory(uint8_t *data, uint16_t size)
 
     nxt_pakt_pointer = bytes[0] | bytes[1] << 8;
 
-    printf(" next packet pointer %04X\n", nxt_pakt_pointer);
+    // printf(" next packet pointer %04X\n", nxt_pakt_pointer);
 
 
     transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
@@ -252,26 +247,34 @@ void ENC28J60::Read_buffer_memory(uint8_t *data, uint16_t size)
     }
 
 
-    printf("  packet lenght%04X\n", packet_length);
+    // printf("  packet lenght%04X\n", packet_length);
 
     transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
     rx_status = bytes[0] | bytes[1] << 8;
 
-    printf(" recive status %04X\n", rx_status);
+    // printf(" recive status %04X\n", rx_status);
 
 
     if ((rx_status & 0x80) == 0)
     {
         // invalid
+        printf("invalid packet received");
         packet_length = 0;
     }
     else
     {
         transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, data, packet_length, READ_BUFFER_MEM);
     }
+    printf("packet length %02X\n", packet_length);
+
+    for (int i = 0; i < (packet_length); i++)
+    {
+        printf("read data in buffer  %02X\n", data[i]); // Print the hexadecimal representation of each element
+    }
 
     write_control_reg_pair(ERDPTL, nxt_pakt_pointer);
     Bit_field_set(ECON2, ECON2_PKTDEC_BIT);
+    return packet_length;
 }
 
 void ENC28J60::enc_packet_send(uint8_t *data, uint16_t length)

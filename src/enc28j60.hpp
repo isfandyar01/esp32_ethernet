@@ -249,7 +249,7 @@ class ENC28J60
     void write_phy_reg(uint8_t reg_address, uint16_t data);
     void write_buffer_memory(uint8_t *data, uint16_t size);
     void enc_packet_send(uint8_t *data, uint16_t length);
-    void Read_buffer_memory(uint8_t *data, uint16_t size);
+    uint16_t Read_buffer_memory(uint8_t *data);
     void switch_bank(ENC28J60_RegBank bank);
     void enc28j60_reset();
     void write_control_reg_pair(uint8_t reg_address, uint16_t data);
