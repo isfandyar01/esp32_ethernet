@@ -1,6 +1,7 @@
 #ifndef __ETHERNET_HPP__
 #define __ETHERNET_HPP__
 
+#include "enc28j60.hpp"
 #include <stdint.h>
 #include <stdio.h>
 
@@ -31,6 +32,14 @@ struct arp_packet_struct
 #pragma pack(pop)
 
 
-void process_arp_request(uint8_t *data);
+typedef struct
+{
+    uint8_t destMACAddr[6];
+    uint8_t srcMACAddr[6];
+    uint16_t ether_type;
+    uint8_t data[];
+} Eth_frame_struct;
+
+void ethernet_process(ENC28J60 *obj);
 
 #endif // __ETHERNET_HPP__

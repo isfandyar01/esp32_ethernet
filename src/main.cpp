@@ -110,17 +110,10 @@ void app_main()
     {
         ether_obj.enc_packet_send(arp_data, sizeof(arp_packet_struct));
 
-        uint16_t packet_lenght = ether_obj.Read_buffer_memory();
+        // uint16_t packet_lenght = ether_obj.Read_buffer_memory();
 
+        ethernet_process(&ether_obj);
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        printf("packet length %02X\n", packet_lenght);
-        for (int i = 0; i < packet_lenght; i++)
-        {
-            printf("read_data %02X\n", ether_obj.ENC_data[i]); // Print the hexadecimal representation of each element
-        }
     }
-
-    // ether_obj.enc_packet_send(arp_request, 42);
-    // vTaskDelay(10 / portTICK_PERIOD_MS); /* code */
 }
