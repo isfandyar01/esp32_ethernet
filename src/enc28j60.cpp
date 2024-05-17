@@ -219,6 +219,8 @@ uint16_t ENC28J60::Read_buffer_memory()
         printf("no packet received\n");
         return 0;
     }
+
+    printf("\tpacket received further reading data\n");
     write_control_reg_pair(ERDPTL, nxt_pakt_pointer);
 
     // read the next packet pointer
@@ -251,7 +253,7 @@ uint16_t ENC28J60::Read_buffer_memory()
         transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, (uint8_t *)&(ENC_data[0]), packet_length, READ_BUFFER_MEM);
         transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, (uint8_t *)&checkSum, ENC28J60_CRC_SIZE, READ_BUFFER_MEM);
     }
-    printf("packet length in bf %02X\n", packet_length);
+
 
     /*
     And here comes the mentioned nuance - the bug ENC28J60. With an even value in ERXRDPT, data corruption can occur, so

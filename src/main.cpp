@@ -33,7 +33,7 @@ uint8_t arp_request[] = {
     0x06, 0x04, // Hardware size (Ethernet MAC address size: 6 bytes), Protocol size (IPv4 address size: 4 bytes)
     0x00, 0x01, // ARP opcode (Request: 0x0001)
     0x74, 0x69, 0x69, 0x2D, 0x30, 0x36, // Sender MAC address
-    0xc0, 0xa8, 0x12, 0x34,               // Sender IP address (192.168.18.52)
+    0xc0, 0xa8, 0x12, 0x34,             // Sender IP address (192.168.18.52)
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Target MAC address (unknown, set to zeros)
     0xc0, 0xa8, 0x12, 0x01              // Target IP address (192.168.18.1)
 };
@@ -56,16 +56,14 @@ void app_main()
     ENC28J60 ether_obj(spi);
     ether_obj.enc28j60_reset();
 
+    vTaskDelay(100 / portTICK_PERIOD_MS);
 
     ether_obj.init_enc28j60();
-
-    // uint8_t mac = ether_obj.read_mac_register(MAADR5);
-    // printf("mac address %x\n", mac);
 
 
     while (true)
     {
-        // ether_obj.enc_packet_send(arp_request, sizeof(arp_request));
+
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         ethernet_process(&ether_obj);
     }

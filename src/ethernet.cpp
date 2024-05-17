@@ -7,34 +7,11 @@
 uint8_t macAddr[6] = {0x74, 0x69, 0x69, 0x2D, 0x30, 0x36};
 
 
-void print_mac(const char *label, const uint8_t *mac)
-{
-    printf("%s: %02X:%02X:%02X:%02X:%02X:%02X\n", label, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-}
-
-void print_ip(const char *label, const uint8_t *ip)
-{
-    printf("%s: %d.%d.%d.%d\n", label, ip[0], ip[1], ip[2], ip[3]);
-}
-
-static void printDestMAC(Eth_frame_struct *eth_frame)
-{
-    printf("Destination MAC Address: ");
-    for (int i = 0; i < 6; i++)
-    {
-        printf("%02X", eth_frame->srcMACAddr[i]);
-        if (i < 5)
-            printf(":");
-    }
-    printf("\n");
-}
-
-
 uint16_t ARP_RESPONSE(arp_packet_struct *arp_frame_data, uint16_t arpFrameLen)
 {
     uint16_t frame_len = 0;
 
-    print_mac("destMacAddr", arp_frame_data->destMacAddr);
+
     if (memcmp(arp_frame_data->destIpAddr, ip_address, 4) == 0)
     {
 
@@ -52,7 +29,7 @@ uint16_t ARP_RESPONSE(arp_packet_struct *arp_frame_data, uint16_t arpFrameLen)
             {
 
                 arp_frame_data->opCode = htons_16bits(Arp_response);
-                printf("op code arp %04X\n", arp_frame_data->opCode);
+
                 frame_len = arpFrameLen;
             }
         }
@@ -97,33 +74,8 @@ void ethernet_process(ENC28J60 *obj)
             memcpy(eth_frame->destMACAddr, eth_frame->srcMACAddr, 6);
             memcpy(eth_frame->srcMACAddr, macAddr, 6);
 
-            printf("%02X:", reply_len);
+
             obj->enc_packet_send((uint8_t *)eth_frame, reply_len + sizeof(eth_frame));
-            // printf("\t\t hehehe \t \n");
-
-            // printf("Destination MAC: ");
-            // for (int i = 0; i < 6; i++)
-            // {
-            //     printf("%02X:", eth_frame->destMACAddr[i]);
-            // }
-            // printf("\n");
-
-            // printf("Source MAC: ");
-            // for (int i = 0; i < 6; i++)
-            // {
-            //     printf("%02X:", eth_frame->srcMACAddr[i]);
-            // }
-            // printf("\n");
-
-            // printf("Ether Type: %04X\n", eth_frame->ether_type);
-
-
-            // printf("Data: ");
-            // for (int i = 0; i < 36; i++)
-            // {
-            //     printf("%02X ", eth_frame->data[i]); // Print each byte in hex format
-            // }
-            // printf("\n");
         }
 
         // now we can process ethernet packet based on its type
