@@ -16,21 +16,19 @@
 #pragma pack(push, 1)
 struct arp_packet_struct
 {
-    uint8_t dst_mac[6];
-    uint8_t src_mac[6];
-    uint8_t ether_type[2];
-    uint8_t hwtype[2];
-    uint8_t protype[2];
-    uint8_t hwsize;
-    uint8_t prosize;
-    uint8_t opcode[2];
-    uint8_t sender_mac[6];
-    uint8_t sender_ip[4];
-    uint8_t target_mac[6];
-    uint8_t target_ip[4];
+    uint16_t hType;
+    uint16_t pType;
+    uint8_t hLen;
+    uint8_t pLen;
+    uint16_t opCode;
+    uint8_t srcMacAddr[6];
+    uint8_t srcIpAddr[4];
+    uint8_t destMacAddr[6];
+    uint8_t destIpAddr[4];
 };
 #pragma pack(pop)
 
+static uint8_t ip_address[4] = {192, 168, 18, 52};
 
 typedef struct
 {
@@ -41,5 +39,7 @@ typedef struct
 } Eth_frame_struct;
 
 void ethernet_process(ENC28J60 *obj);
+
+uint16_t ARP_RESPONSE(arp_packet_struct *arp_frame_data, uint16_t arpFrameLen);
 
 #endif // __ETHERNET_HPP__

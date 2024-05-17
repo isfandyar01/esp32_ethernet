@@ -271,6 +271,8 @@ uint16_t ENC28J60::Read_buffer_memory()
 
 void ENC28J60::enc_packet_send(uint8_t *data, uint16_t length)
 {
+
+
     while (1)
     {
         Bit_field_set(ECON1, ECON1_TXRST_BIT);
