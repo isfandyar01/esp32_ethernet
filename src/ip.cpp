@@ -1,5 +1,6 @@
 #include "ip.hpp"
-
+#include "ethernet.hpp"
+#include "string.h"
 /**
  * @brief the check sum works by adding all bytes in
  * form of 16 bit data and then taking compliement of it
@@ -65,4 +66,22 @@ uint16_t ip_checksum_calc(uint8_t *data, uint16_t length)
     //  +-----------+
     //  | Checksum  | (Inverted bits of the final reduced value)
     //  +-----------+
+}
+
+
+uint16_t ip_process(ip_frame_struct *ip_frame, uint16_t length)
+{
+
+    uint16_t frame_len = 0;
+    if (memcmp(ip_frame->dest_ip, ip_address, 4) == 0)
+    {
+        uint16_t received_checksum = 0;
+        received_checksum = ip_frame->header_checksum;
+        ip_frame->header_checksum = 0;
+        uint16_t cal_checksum = ip_checksum_calc((uint8_t *)ip_frame, sizeof(ip_frame));
+        if (received_checksum == cal_checksum)
+        {
+            printf("checksum_ok");
+        }
+    }
 }

@@ -24,5 +24,6 @@ typedef struct
 
 
 uint16_t ip_checksum_calc(uint8_t *data, uint16_t length);
+uint16_t ip_process(ip_frame_struct *obj, uint16_t length);
 
 #endif // __IP_HPP__
