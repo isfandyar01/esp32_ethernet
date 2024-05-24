@@ -92,7 +92,7 @@ void ethernet_process(ENC28J60 *obj)
             memcpy(eth_frame->srcMACAddr, macAddr, 6);
 
 
-            obj->enc_packet_send((uint8_t *)eth_frame, reply_len + sizeof(eth_frame));
+            obj->enc_packet_send((uint8_t *)eth_frame, reply_len + sizeof(Eth_frame_struct));
         }
 
         // now we can process ethernet packet based on its type
