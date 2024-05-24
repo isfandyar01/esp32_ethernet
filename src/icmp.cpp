@@ -17,6 +17,8 @@ uint16_t icmp_frame_processor(icmp_frame_struct *frame, uint16_t lenght)
             frame->type = ICMP_FRAME_TYPE_ECHO_REPLY;
             frame->checksum = ip_checksum_calc((uint8_t *)frame, lenght);
             newframelen = lenght;
+
+            printf("&&***&& data apeended &&***&& \n ");
         }
     }
     return newframelen;

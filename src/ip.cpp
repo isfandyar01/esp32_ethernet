@@ -153,7 +153,7 @@ uint16_t ip_process(ip_frame_struct *ip_frame, uint16_t length)
             ip_frame->data_gram_idenfication = 0;
             memcpy(ip_frame->dest_ip, ip_frame->source_ip, 4);
             memcpy(ip_frame->source_ip, ip_address, 4);
-            ip_frame->header_checksum = ip_checksum_calc((uint8_t *)ip_frame, sizeof(ip_frame));
+            ip_frame->header_checksum = ip_checksum_calc((uint8_t *)ip_frame, sizeof(ip_frame_struct));
         }
     }
     return frame_len;
