@@ -7,6 +7,9 @@
  * @brief https://benisnous.com/wp-content/uploads/2021/08/IPV4-header-format-in-Computer-Network.jpg
  *
  */
+
+
+#pragma pack(push, 1)
 typedef struct
 {
     uint8_t verHL;
@@ -22,6 +25,9 @@ typedef struct
     uint8_t data[];
 } ip_frame_struct;
 
+#pragma pack(pop)
+
+#define IP_FRAME_PROTOCOL_ICMP 0x01
 
 uint16_t ip_checksum_calc(uint8_t *data, uint16_t length);
 uint16_t ip_process(ip_frame_struct *obj, uint16_t length);

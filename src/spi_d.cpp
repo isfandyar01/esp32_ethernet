@@ -90,5 +90,6 @@ esp_err_t transfer_and_read_MultiplesBytes(spi_device_handle_t spi_handle, const
         printf("SPI transaction failed: %d\n", ret);
         return ret; // Or handle error as appropriate
     }
+    
     return ESP_OK;
 }

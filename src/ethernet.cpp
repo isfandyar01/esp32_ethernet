@@ -1,4 +1,5 @@
 #include "ethernet.hpp"
+#include "ip.hpp"
 #include "macros.hpp"
 #include <stdio.h>
 #include <string.h>
@@ -9,6 +10,7 @@ uint8_t macAddr[6] = {0x74, 0x69, 0x69, 0x2D, 0x30, 0x36};
 
 uint16_t ARP_RESPONSE(arp_packet_struct *arp_frame_data, uint16_t arpFrameLen)
 {
+
     uint16_t frame_len = 0;
 
 
@@ -34,9 +36,9 @@ uint16_t ARP_RESPONSE(arp_packet_struct *arp_frame_data, uint16_t arpFrameLen)
             }
         }
 
-        return arpFrameLen;
+        return frame_len;
     }
-    return 0;
+    return frame_len;
 }
 
 
@@ -59,14 +61,29 @@ void ethernet_process(ENC28J60 *obj)
         // ether type should be 0806 but it comes out as 0608 so i need to put macrocs next
         uint16_t ether_type = ntohs_16bits(eth_frame->ether_type);
 
+        // data len is minimum 64 bytes i think so it get padded with zeros and to get actual frame lenght we minus the
+        // etherframe - data length
 
+
+        uint16_t ethdata_len = data_len - sizeof(Eth_frame_struct);
+
+        // for (size_t i = 0; i < ethdata_len; i++)
+        // {
+        //     printf("frame data %4X \n", eth_frame->data[i]);
+        // }
+
+
+        // printf("eth data len %d\n", ethdata_len);
         if (ether_type == ETH_FRAME_TYPE_ARP)
         {
-
-            uint16_t arpFrameLen = data_len - sizeof(eth_frame);
-            reply_len = ARP_RESPONSE((arp_packet_struct *)eth_frame->data, arpFrameLen);
+            // printf("\t\treceived frame is arp type\n");
+            reply_len = ARP_RESPONSE((arp_packet_struct *)eth_frame->data, ethdata_len);
         }
-
+        if (ether_type == ETH_FRAME_TYPE_IP)
+        {
+            // printf("\t\treceived frame is ip type\n");
+            reply_len = ip_process((ip_frame_struct *)eth_frame->data, ethdata_len);
+        }
         if (reply_len > 0)
         {
 

@@ -13,6 +13,7 @@
 #define ETH_FRAME_TYPE_ARP 0x0806
 #define ETH_FRAME_TYPE_IP 0x0800
 
+
 #pragma pack(push, 1)
 struct arp_packet_struct
 {

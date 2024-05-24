@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"name": "esp32_ethernet",
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"array": "cpp",
+			"string": "cpp",
+			"string_view": "cpp"
+		}
+	}
+}

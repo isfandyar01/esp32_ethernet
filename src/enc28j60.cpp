@@ -216,11 +216,11 @@ uint16_t ENC28J60::Read_buffer_memory()
     uint8_t packet_count = Read_control_register(EPKTCNT);
     if (packet_count == 0)
     {
-        printf("no packet received\n");
+        // printf("no packet received\n");
         return 0;
     }
 
-    printf("\tpacket received further reading data\n");
+    // printf(" packet received \n");
     write_control_reg_pair(ERDPTL, nxt_pakt_pointer);
 
     // read the next packet pointer
