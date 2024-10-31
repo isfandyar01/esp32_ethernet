@@ -10,6 +10,13 @@
 #include "ethernet.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "lwip/inet.h"
+#include "lwip/init.h"
+#include "lwip/netif.h"
+#include "lwip/stats.h"
+#include "lwip/tcp.h"
+#include "lwip/tcpip.h"
+#include "lwipopts.h"
 #include "nvs_flash.h"
 #include "spi_d.hpp"
 #include <stdio.h>
@@ -38,9 +45,19 @@ uint8_t arp_request[] = {
     0xc0, 0xa8, 0x12, 0x01              // Target IP address (192.168.18.1)
 };
 
+err_t low_level_output(struct netif *netif, struct pbuf *p)
+{
+    struct pbuf *q;
+    for (q = p; q != NULL; q = q->next)
+    {
+        ether_obj.enc_packet_send((uint8_t *)q->payload, q->len);
+    }
+    return ERR_OK;
+}
 
 void app_main()
 {
+    tcpip_init(NULL, NULL);
 
 
     printf("Hello PlatformIO!\n");
