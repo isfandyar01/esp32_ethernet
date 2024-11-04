@@ -19,10 +19,22 @@
 #define ENC_HEAD_SIZE 6
 #define ENC28J60_CRC_SIZE 4
 
-#define ENC28J60_TX_BUF_START 0x0000
-#define ENC28J60_TX_BUF_END 0x05ff
-#define ENC28J60_RX_BUF_START 0x0600
-#define ENC28J60_RX_BUF_END 0x1fff
+#define ENC28J60_BUFFER_SIZE (0x2000) // 8KB built-in buffer
+
+/**
+ *  ______
+ * |__TX__| TX: 2 KB : [0x1800, 0x2000)
+ * |      |
+ * |  RX  | RX: 6 KB : [0x0000, 0x1800)
+ * |______|
+ *
+ */
+
+#define ENC28J60_RX_BUF_START (0)                       // Start of RX buffer
+#define ENC28J60_RX_BUF_END (ENC28J60_TX_BUF_START - 1) // End of RX buffer
+
+#define ENC28J60_TX_BUF_START ((ENC28J60_BUFFER_SIZE / 4) * 3) // Start of TX buffer at 6 KB
+#define ENC28J60_TX_BUF_END (ENC28J60_BUFFER_SIZE - 1)         // End of TX buffer at 8 KB
 
 #define EIE_RXERIE (1 << 0)
 #define EIE_TXERIE (1 << 1)
@@ -272,3 +284,4 @@ class ENC28J60
 };
 
 #endif // ENC28J60_HPP
+       /// https://microtechnics.ru/stm32-i-ethernet-chast-1-podklyuchenie-i-nastrojka-enc28j60/

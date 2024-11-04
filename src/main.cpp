@@ -35,12 +35,10 @@ extern "C"
 // TCP Server Implementation
 #define TCP_PORT 7 // Echo server port
 
-spi_device_handle_t spi;
-
-ENC28J60 ether_obj(spi);
 
 static struct netif enc_netif;
 static ENC28J60 *enc_driver = nullptr;
+static spi_device_handle_t spi;
 
 static err_t enc28j60_netif_init(struct netif *netif);
 static err_t enc28j60_netif_output(struct netif *netif, struct pbuf *p);
@@ -126,7 +124,7 @@ static void start_tcp_server(void)
 void app_main(void)
 {
     // Initialize SPI
-    spi_device_handle_t spi;
+
     ESP_ERROR_CHECK(spi_init(&spi, 5, 3));
 
     // Initialize ENC28J60
@@ -150,7 +148,7 @@ void app_main(void)
 
     ESP_LOGI("MAIN", "Network interface initialized");
     ESP_LOGI("MAIN", "IP: " IPSTR, IP2STR(&ipaddr));
-    // start_tcp_server();
+    start_tcp_server();
     // Main loop
     while (1)
     {
@@ -163,7 +161,11 @@ void app_main(void)
 bool enc28j60_network_init(ENC28J60 *driver, const ip4_addr_t *ipaddr, const ip4_addr_t *netmask, const ip4_addr_t *gw)
 {
     enc_driver = driver;
-
+    if (enc_driver == NULL)
+    {
+        ESP_LOGE(TAG, "enc driver null");
+        return false;
+    }
     // Initialize LWIP
     tcpip_init(NULL, NULL);
 
@@ -219,10 +221,12 @@ static err_t enc28j60_netif_output(struct netif *netif, struct pbuf *p)
 {
     if (enc_driver == nullptr)
     {
+        ESP_LOGE(TAG, "drive null");
         return ERR_IF;
     }
 
     // Send packet using your driver
+    ESP_LOGW(TAG, "ABOUT TO SEND ");
     enc_driver->enc_packet_send((uint8_t *)p->payload, p->tot_len);
 
     return ERR_OK;
@@ -244,6 +248,7 @@ static void enc28j60_input_task(void *pvParameters)
         if (len > 0)
         {
             // Allocate pbuf
+            ESP_LOGW(TAG, "INPUT RECEIVED %d", len);
             struct pbuf *p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
             if (p != NULL)
             {
@@ -259,6 +264,6 @@ static void enc28j60_input_task(void *pvParameters)
         }
 
         // Small delay to prevent tight loop
-        vTaskDelay(pdMS_TO_TICKS(1));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }

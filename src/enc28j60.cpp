@@ -1,12 +1,16 @@
 #include "enc28j60.hpp"
+#include "esp_log.h"
 #include "spi_d.hpp"
-
 
 uint8_t ENC28J60::current_bank = BANK_0;
 uint16_t ENC28J60 ::nxt_pakt_pointer = ENC28J60_RX_BUF_START;
 
 ENC28J60::ENC28J60(spi_device_handle_t spi_handle)
 {
+    if (spi == nullptr)
+    {
+        ESP_LOGE("ERROR", "SPI handle is not initialized in ENC28J60 constructor.");
+    }
     spi = spi_handle;
 }
 
@@ -291,11 +295,21 @@ void ENC28J60::enc_packet_send(uint8_t *data, uint16_t length)
         write_buffer_memory(&control_byte, 1);
         write_buffer_memory(data, length);
 
+        // Reset the transmit logic problem. See Rev. B7 Silicon Errata issues 12 and 13
+
+        Bit_field_set(ECON1, ECON1_TXRST_BIT);
+        Bit_field_clear(ECON1, ECON1_TXRST_BIT);
+        Bit_field_clear(EIR, EIR_TXERIF_BIT | EIR_TXIF_BIT);
+
         Bit_field_set(ECON1, ECON1_TXRTS_BIT);
+
 
         uint16_t count = 0;
         while ((Read_control_register(EIR) & (EIR_TXIF_BIT | EIR_TXERIF_BIT)) == 0 && ++count < 1000U)
-            ;
+        {
+            printf("transmission stuck \n");
+            // Bit_field_clear(ECON1, ECON1_TXRTS_BIT);
+        }
         if (!(Read_control_register(EIR) & EIR_TXERIF_BIT) && count < 1000U)
         {
             printf("transmission done \n");
