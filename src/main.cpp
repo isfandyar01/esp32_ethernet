@@ -239,7 +239,7 @@ static void enc28j60_input_task(void *pvParameters)
     {
         if (enc_driver == nullptr)
         {
-            vTaskDelay(pdMS_TO_TICKS(10));
+            vTaskDelay(pdMS_TO_TICKS(30));
             continue;
         }
 
@@ -264,6 +264,6 @@ static void enc28j60_input_task(void *pvParameters)
         }
 
         // Small delay to prevent tight loop
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(30));
     }
 }

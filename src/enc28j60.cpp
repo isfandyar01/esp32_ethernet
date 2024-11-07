@@ -1,5 +1,6 @@
 #include "enc28j60.hpp"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "spi_d.hpp"
 
 uint8_t ENC28J60::current_bank = BANK_0;
@@ -216,107 +217,111 @@ void ENC28J60::write_buffer_memory(uint8_t *data, uint16_t size)
 uint16_t ENC28J60::Read_buffer_memory()
 {
     uint8_t bytes[2] = {0};
-
+    uint16_t dataSize = 0;
     uint8_t packet_count = Read_control_register(EPKTCNT);
-    if (packet_count == 0)
+
+    // Check if there are packets in the buffer
+    if (packet_count != 0)
     {
-        // printf("no packet received\n");
-        return 0;
+        // Set the read pointer to the start of the current packet
+        write_control_reg_pair(ERDPTL, nxt_pakt_pointer);
+
+        // Read the next packet pointer
+        transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
+        nxt_pakt_pointer = bytes[0] | (bytes[1] << 8);
+
+        // Read packet length
+        transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
+        dataSize = (bytes[0] | (bytes[1] << 8)) - ENC28J60_CRC_SIZE;
+
+        // Ensure data size does not exceed the buffer max
+        if (dataSize > ENC28J60_FRAME_DATA_MAX)
+        {
+            dataSize = ENC28J60_FRAME_DATA_MAX;
+        }
+
+        // Read packet status to validate
+        transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
+        uint16_t packet_status = bytes[0] | (bytes[1] << 8);
+
+        if ((packet_status & 0x80) == 0) // Invalid packet check
+        {
+            dataSize = 0;
+            printf("Invalid packet received\n");
+        }
+        else
+        {
+            // Read the packet data into ENC_data array
+            transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, (uint8_t *)&(ENC_data[0]), dataSize, READ_BUFFER_MEM);
+
+            // Optionally read CRC if needed
+            transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, (uint8_t *)&checkSum, ENC28J60_CRC_SIZE,
+                                             READ_BUFFER_MEM);
+        }
+
+        // Adjust RX read pointer to start of next packet
+        uint16_t nextPtr = nxt_pakt_pointer - 1;
+        if (nextPtr > ENC28J60_RX_BUF_END)
+        {
+            nextPtr = ENC28J60_RX_BUF_END;
+        }
+        write_control_reg_pair(ERXRDPTL, nextPtr);
+        Bit_field_set(ECON2, ECON2_PKTDEC_BIT);
     }
-
-    // printf(" packet received \n");
-    write_control_reg_pair(ERDPTL, nxt_pakt_pointer);
-
-    // read the next packet pointer
-    transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
-
-    nxt_pakt_pointer = bytes[0] | bytes[1] << 8;
-
-    transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
-
-    packet_length = bytes[0] | bytes[1] << 8;
-
-    packet_length -= 4; // remove crc
-
-    if (packet_length > (ENC28J60_FRAME_DATA_MAX - 1))
-    {
-        packet_length = ENC28J60_FRAME_DATA_MAX - 1;
-    }
-
-    transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
-    packet_status = bytes[0] | bytes[1] << 8;
-
-    if ((packet_status & 0x80) == 0)
-    {
-        // invalid
-        printf("invalid packet received");
-        packet_length = 0;
-    }
-    else
-    {
-        transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, (uint8_t *)&(ENC_data[0]), packet_length, READ_BUFFER_MEM);
-        transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, (uint8_t *)&checkSum, ENC28J60_CRC_SIZE, READ_BUFFER_MEM);
-    }
-
-
-    /*
-    And here comes the mentioned nuance - the bug ENC28J60. With an even value in ERXRDPT, data corruption can occur, so
-    write a value reduced by 1 to this register (it will be odd, since an even value is guaranteed in frame->nextPtr,
-    since the packet start address is always even in the controller)
-    */
-    uint16_t nextPtr = nxt_pakt_pointer - 1;
-    if (nextPtr > ENC28J60_RX_BUF_END)
-    {
-        nextPtr = ENC28J60_RX_BUF_END;
-    }
-
-    write_control_reg_pair(ERDPTL, nextPtr);
-    Bit_field_set(ECON2, ECON2_PKTDEC_BIT);
-    return packet_length;
+    return dataSize;
 }
-
 void ENC28J60::enc_packet_send(uint8_t *data, uint16_t length)
 {
 
 
-    while (1)
+    // Set the TX buffer start pointer
+    write_control_reg_pair(EWRPTL, ENC28J60_TX_BUF_START);
+
+    // Set the TX end pointer to mark the end of the data
+    write_control_reg_pair(ETXNDL, ENC28J60_TX_BUF_START + length);
+
+    // Reset the transmit logic, as per errata
+    Bit_field_set(ECON1, ECON1_TXRST_BIT);
+    Bit_field_clear(ECON1, ECON1_TXRST_BIT);
+
+    // Clear any existing TX flags
+    Bit_field_clear(EIR, EIR_TXERIF_BIT | EIR_TXIF_BIT);
+
+
+    uint8_t control_byte = 0x00;
+
+    // Write control byte to start of the TX buffer
+    write_buffer_memory(&control_byte, 1);
+    // Write data to the buffer
+    write_buffer_memory(data, length);
+    // Start transmission
+    Bit_field_set(ECON1, ECON1_TXRTS_BIT);
+
+
+    // Wait for transmission to complete or timeout
+    unsigned long timer = esp_timer_get_time() / 1000;
+    uint8_t eir;
+    while (((eir = Read_control_register(EIR)) & (EIR_TXIF_BIT | EIR_TXERIF_BIT)) == 0)
     {
-        Bit_field_set(ECON1, ECON1_TXRST_BIT);
-        Bit_field_clear(ECON1, ECON1_TXRST_BIT);
-        Bit_field_clear(EIR, EIR_TXERIF_BIT | EIR_TXERIF_BIT);
-
-        write_control_reg_pair(EWRPTL, ENC28J60_TX_BUF_START);
-        write_control_reg_pair(ETXNDL, ENC28J60_TX_BUF_START + length);
-        /* before sending packet i have to write control byte per packet
-        it will be 0x00 so that setting for packet is taken from macon3
-        which we initializing in init function
-        */
-        uint8_t control_byte = 0x00;
-        write_buffer_memory(&control_byte, 1);
-        write_buffer_memory(data, length);
-
-        // Reset the transmit logic problem. See Rev. B7 Silicon Errata issues 12 and 13
-
-        Bit_field_set(ECON1, ECON1_TXRST_BIT);
-        Bit_field_clear(ECON1, ECON1_TXRST_BIT);
-        Bit_field_clear(EIR, EIR_TXERIF_BIT | EIR_TXIF_BIT);
-
-        Bit_field_set(ECON1, ECON1_TXRTS_BIT);
-
-
-        uint16_t count = 0;
-        while ((Read_control_register(EIR) & (EIR_TXIF_BIT | EIR_TXERIF_BIT)) == 0 && ++count < 1000U)
+        // Check for timeout after 1000 ms
+        if ((esp_timer_get_time() / 1000) - timer > 1000)
         {
-            printf("transmission stuck \n");
-            // Bit_field_clear(ECON1, ECON1_TXRTS_BIT);
+            printf("Transmission timeout\n");
+            Bit_field_clear(ECON1, ECON1_TXRTS_BIT); // Stop transmission if stuck
+            return;                                  // Exit on failure
         }
-        if (!(Read_control_register(EIR) & EIR_TXERIF_BIT) && count < 1000U)
-        {
-            printf("transmission done \n");
-            break;
-        }
-        printf("cancel prev transmission \n");
-        Bit_field_clear(ECON1, ECON1_TXRTS_BIT);
-        break;
+    }
+
+    // Clear the TXRTS bit to finalize
+    Bit_field_clear(ECON1, ECON1_TXRTS_BIT);
+
+    // Log success or failure
+    if (eir & EIR_TXERIF_BIT)
+    {
+        printf("Transmission failed\n");
+    }
+    else
+    {
+        printf("Transmission successful\n");
     }
 }
