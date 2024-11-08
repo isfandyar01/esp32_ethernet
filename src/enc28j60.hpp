@@ -30,11 +30,11 @@
  *
  */
 
-#define ENC28J60_RX_BUF_START (0)                       // Start of RX buffer
-#define ENC28J60_RX_BUF_END (ENC28J60_TX_BUF_START - 1) // End of RX buffer
+#define ENC28J60_RX_BUF_START (0)                 // Start of RX buffer
+#define ENC28J60_RX_BUF_END (0x1FFF - 0x0600 - 1) // End of RX buffer
 
-#define ENC28J60_TX_BUF_START ((ENC28J60_BUFFER_SIZE / 4) * 3) // Start of TX buffer at 6 KB
-#define ENC28J60_TX_BUF_END (ENC28J60_BUFFER_SIZE - 1)         // End of TX buffer at 8 KB
+#define ENC28J60_TX_BUF_START (0x1FFF - 0x0600) // Start of TX buffer at 6 KB
+#define ENC28J60_TX_BUF_END 0x1FFF              // End of TX buffer at 8 KB
 
 #define EIE_RXERIE (1 << 0)
 #define EIE_TXERIE (1 << 1)

@@ -224,7 +224,8 @@ uint16_t ENC28J60::Read_buffer_memory()
     if (packet_count != 0)
     {
         // Set the read pointer to the start of the current packet
-        write_control_reg_pair(ERDPTL, nxt_pakt_pointer);
+        write_control_reg(ERDPTL, (nxt_pakt_pointer & 0xff));
+        write_control_reg(ERDPTH, (nxt_pakt_pointer) >> 8);
 
         // Read the next packet pointer
         transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
@@ -234,20 +235,24 @@ uint16_t ENC28J60::Read_buffer_memory()
         transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
         dataSize = (bytes[0] | (bytes[1] << 8)) - ENC28J60_CRC_SIZE;
 
-        // Ensure data size does not exceed the buffer max
-        if (dataSize > ENC28J60_FRAME_DATA_MAX)
-        {
-            dataSize = ENC28J60_FRAME_DATA_MAX;
-        }
-
         // Read packet status to validate
         transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, bytes, sizeof(bytes), READ_BUFFER_MEM);
         uint16_t packet_status = bytes[0] | (bytes[1] << 8);
 
+        // Ensure data size does not exceed the buffer max
+        if (dataSize > ENC28J60_FRAME_DATA_MAX - 1)
+        {
+            dataSize = ENC28J60_FRAME_DATA_MAX - 1;
+        }
+
         if ((packet_status & 0x80) == 0) // Invalid packet check
         {
             dataSize = 0;
-            printf("Invalid packet received\n");
+            // printf("Invalid packet received\n");
+            // write_control_reg_pair(ERXRDPTL, nxt_pakt_pointer - 1);
+            // Bit_field_set(ECON2, ECON2_PKTDEC_BIT);
+
+            // return dataSize;
         }
         else
         {
@@ -255,17 +260,26 @@ uint16_t ENC28J60::Read_buffer_memory()
             transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, (uint8_t *)&(ENC_data[0]), dataSize, READ_BUFFER_MEM);
 
             // Optionally read CRC if needed
-            transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, (uint8_t *)&checkSum, ENC28J60_CRC_SIZE,
-                                             READ_BUFFER_MEM);
+            // transfer_and_read_MultiplesBytes(spi, 0x1A, nullptr, (uint8_t *)&checkSum, ENC28J60_CRC_SIZE,
+            //                                  READ_BUFFER_MEM);
         }
+
+        write_control_reg(ERXRDPTL, (nxt_pakt_pointer & 0xff));
+        write_control_reg(ERXRDPTH, (nxt_pakt_pointer) >> 8);
 
         // Adjust RX read pointer to start of next packet
         uint16_t nextPtr = nxt_pakt_pointer - 1;
-        if (nextPtr > ENC28J60_RX_BUF_END)
+        if (nextPtr < ENC28J60_RX_BUF_START || nextPtr > ENC28J60_RX_BUF_END)
         {
-            nextPtr = ENC28J60_RX_BUF_END;
+            write_control_reg(ERXRDPTL, (ENC28J60_RX_BUF_END) & 0xff);
+            write_control_reg(ERXRDPTH, (ENC28J60_RX_BUF_END) >> 8);
         }
-        write_control_reg_pair(ERXRDPTL, nextPtr);
+        else
+        {
+            write_control_reg(ERXRDPTL, (nextPtr) & 0xff);
+            write_control_reg(ERXRDPTH, (nextPtr) >> 8);
+        }
+
         Bit_field_set(ECON2, ECON2_PKTDEC_BIT);
     }
     return dataSize;
